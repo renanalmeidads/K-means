@@ -1,0 +1,206 @@
+<html>
+    <head>
+        <script src="./libraries/jquery-3.7.1.min.js"></script>
+        <script src="./libraries/jquery.csv.min.js"></script>
+        <script src="./libraries/chart.js"></script>
+        
+        <link rel="stylesheet" href="./assets/index.css">
+    </head>
+    <body>
+      <div class="container">
+          <div class="chart-container">
+              <div class="chart">
+                <canvas id="myChart"></canvas>
+              </div>
+          </div>
+          <input class="file-input" type="file" id="uploadFile" accept=".csv"/>
+      </div>
+    </body>
+</html>
+
+<script>
+  const centroidsAmount = 3;
+
+  let dataPoints = [];
+  let data = {};
+  let centroidsPoints = [];
+  let distancesArray = [];
+  let centroidsGroups = [];
+  let centroidsPointsGroups = [];
+  let currentCentroidsPointsGroups;
+
+  function calculateTwoPointsDistance(p1, p2) {
+    return Math.sqrt((p1.x - p2.x) ** 2 + (p1.y - p2.y) ** 2);
+  }
+
+  function getRandomIntInclusive(min, max) {
+    min = Math.ceil(min);
+    max = Math.floor(max);
+    return Math.floor(Math.random() * (max - min + 1) + min);
+  }
+
+  async function ReadFile(file) {
+    return await file.text();
+  }
+
+  function removeExtraSpace(stringData) {
+    stringData = stringData.replace(/,( *)/gm, ",");
+    stringData = stringData.replace(/^ *| *$/gm, "");
+    return stringData;  
+  }
+
+  const inputFile = document.getElementById("uploadFile");
+
+  function comparePointsDistances(p1, p2) {
+    if (p1.distance > p2.distance) {
+      return 1;
+    }
+
+    if (p1.distance < p2.distance) {
+      return -1;
+    }
+
+    return 0;
+  }
+
+  inputFile.onchange = () => {
+    const inputValue = inputFile.value
+    if (inputValue === "") {
+      return
+    }
+
+    const selectedFile = document.getElementById('uploadFile').files[0];
+    const promise = new Promise(resolve => {
+      const fileContent = ReadFile(selectedFile);
+      resolve(fileContent);
+    });
+
+    promise.then(fileContent => {
+      fileContent = removeExtraSpace(fileContent);
+      const myObj = $.csv.toObjects(fileContent);
+
+      dataPoints = myObj.map((o, i) => { return { index: i, x: o.child_mort, y: o.exports} });
+
+      data = {
+        datasets: [{
+          label: 'Scatter Dataset',
+          data: dataPoints,
+          backgroundColor: 'red',
+          order: Number.MAX_SAFE_INTEGER
+        }],
+      };
+
+      const ctx = document.getElementById('myChart');
+
+      const config = {
+        type: 'scatter',
+        data: data,
+        options: {
+          responsive: true
+        }
+      };
+
+      const chart = new Chart(ctx, config);
+
+      for(let i = 0; i < centroidsAmount; i++) {
+        centroidsPoints.push(dataPoints[getRandomIntInclusive(0, dataPoints.length - 1)]);
+      }
+
+      centroidsGroups.push(centroidsPoints);
+
+      let newDataSet = {
+        label: 'Nova era',
+        data: centroidsGroups[0],
+        backgroundColor: 'blue',
+        order: 1
+      };
+
+      chart.data.datasets.push(newDataSet);
+      chart.update();
+
+      let compareTwoArrays = (a1, a2) => {
+        console.log('a1', a1);
+        console.log('a2', a2);
+        return (
+            a1.length === a2.length &&
+            a1.every((e1) =>
+                a2.some((e2) =>
+                    Object.keys(e1).every((key) => e1[key] === e2[key])
+                )
+            )
+        );
+      };
+
+      let compareMatrix = (m1, m2) => {
+        if(m1.length === m2.length) {
+          m1.forEach((a1, i) => {
+            if(!compareTwoArrays(a1, m2[i])) {
+              return false;
+            }
+          });
+
+          return true;
+        }
+      };
+
+      let endKMeans = false;
+
+      while(!endKMeans) {
+        currentCentroidsPointsGroups = [];
+        console.log('centroidsPoints', centroidsPoints);
+
+        // Calcula a distância geométrica
+        for(let i = 0; i < centroidsAmount; i++) {
+          dataPoints.forEach((p) => {
+            distancesArray.push( { centroid: i, point_index: p.index, point: p, distance: calculateTwoPointsDistance(centroidsPoints[i], p) } );
+          });
+
+          currentCentroidsPointsGroups.push([]);
+        }
+
+        // Associa a cada ponto o centróide mais perto
+        dataPoints.forEach((p) => {
+          const group = distancesArray.filter((d) => d.point_index === p.index);
+
+          group.sort((a,b) => comparePointsDistances(a, b)); 
+
+          currentCentroidsPointsGroups[group[0].centroid].push(group[0].point);
+        });
+
+        console.log("centroidsPointsGroups", centroidsPointsGroups);
+        console.log("currentCentroidsPointsGroups", currentCentroidsPointsGroups);
+
+        // Se não houve mudança no conjunto dos centróides
+        if(!compareMatrix(centroidsPointsGroups, currentCentroidsPointsGroups)) {
+          const centroidGroup = [];
+          centroidsPoints = [];
+
+          currentCentroidsPointsGroups.forEach((c, i) => {
+            const xAverage = c.reduce((total, next) => total + parseFloat(next.x), 0, 0) / c.length;
+            const yAverage = c.reduce((total, next) => total + parseFloat(next.y), 0, 0) / c.length;
+
+            centroidGroup.push({ index: i, x: xAverage, y: yAverage });
+          });
+
+          centroidsGroups.push(centroidGroup);
+
+          let dataSet2 = {
+            label: 'Nova era 2',
+            data: centroidsGroups[1],
+            backgroundColor: 'green',
+            order: 0
+          };
+
+          chart.data.datasets.push(dataSet2);
+          chart.update();
+
+          centroidsPointsGroups = structuredClone(currentCentroidsPointsGroups);
+          centroidsPoints = centroidGroup;
+        } 
+        else {
+          endKMeans = true;
+        }
+      }
+    });
+  }
+</script>
