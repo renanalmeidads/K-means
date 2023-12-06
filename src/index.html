@@ -64,7 +64,7 @@
   }
 
   function getRandomColor() {
-    return `rgb(0,${getRandomIntInclusive(0, 255)},${getRandomIntInclusive(0, 255)})`;
+    return `rgb(${getRandomIntInclusive(0, 155)},${getRandomIntInclusive(0, 255)},${getRandomIntInclusive(0, 255)})`;
   }
 
   inputFile.onchange = () => {
@@ -83,7 +83,7 @@
       fileContent = removeExtraSpace(fileContent);
       const myObj = $.csv.toObjects(fileContent);
 
-      dataPoints = myObj.map((o, i) => { return { index: i, x: o.child_mort, y: o.inflation} });
+      dataPoints = myObj.map((o, i) => { return { index: i, x: o.child_mort, y: o.inflation } });
 
       data = {
         datasets: [],
