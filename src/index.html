@@ -39,7 +39,7 @@
     return Math.floor(Math.random() * (max - min + 1) + min);
   }
 
-  async function ReadFile(file) {
+  async function readFile(file) {
     return await file.text();
   }
 
@@ -63,6 +63,10 @@
     return 0;
   }
 
+  function getRandomColor() {
+    return `rgb(0,${getRandomIntInclusive(0, 255)},${getRandomIntInclusive(0, 255)})`;
+  }
+
   inputFile.onchange = () => {
     const inputValue = inputFile.value
     if (inputValue === "") {
@@ -71,7 +75,7 @@
 
     const selectedFile = document.getElementById('uploadFile').files[0];
     const promise = new Promise(resolve => {
-      const fileContent = ReadFile(selectedFile);
+      const fileContent = readFile(selectedFile);
       resolve(fileContent);
     });
 
@@ -82,12 +86,7 @@
       dataPoints = myObj.map((o, i) => { return { index: i, x: o.child_mort, y: o.exports} });
 
       data = {
-        datasets: [{
-          label: 'Initial dataset',
-          data: dataPoints,
-          backgroundColor: 'red',
-          order: Number.MAX_SAFE_INTEGER
-        }],
+        datasets: [],
       };
 
       const ctx = document.getElementById('myChart');
@@ -107,16 +106,6 @@
       }
 
       centroidsGroups.push(centroidsPoints);
-
-      let newDataSet = {
-        label: 'Primeiros centróides',
-        data: centroidsGroups[0],
-        backgroundColor: 'blue',
-        order: 1
-      };
-
-      chart.data.datasets.push(newDataSet);
-      chart.update();
 
       let compareTwoArrays = (a1, a2) => {
         let result = a1.length === a2.length &&
@@ -187,16 +176,26 @@
         }
       }
 
-      console.log(centroidsGroups);
+      
+      centroidsPointsGroups.forEach((c,i) => {
+        let dataSet = {
+          label: 'Centróide ' + (i + 1),
+          data: c,
+          backgroundColor: getRandomColor(),
+          order: Number.MAX_SAFE_INTEGER
+        }
 
-      let finalDataSet = {
+        chart.data.datasets.push(dataSet);
+      });
+
+      let centroidsDataSet = {
         label: 'Centróides finais',
         data: centroidsGroups[centroidsGroups.length - 1],
-        backgroundColor: 'green',
+        backgroundColor: 'red',
         order: 0
       };
 
-      chart.data.datasets.push(finalDataSet);
+      chart.data.datasets.push(centroidsDataSet);
       chart.update();
     });
   }
