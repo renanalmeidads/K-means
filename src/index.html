@@ -161,8 +161,8 @@
           centroidsPoints = [];
 
           currentCentroidsPointsGroups.forEach((c, i) => {
-            const xAverage = c.reduce((total, next) => total + parseFloat(next.x), 0, 0) / c.length;
-            const yAverage = c.reduce((total, next) => total + parseFloat(next.y), 0, 0) / c.length;
+            const xAverage = c.reduce((total, next) => total + parseFloat(next.x), 0) / c.length;
+            const yAverage = c.reduce((total, next) => total + parseFloat(next.y), 0) / c.length;
 
             centroidGroup.push({ index: i, x: xAverage, y: yAverage });
           });
