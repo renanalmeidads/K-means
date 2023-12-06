@@ -83,7 +83,7 @@
 
       data = {
         datasets: [{
-          label: 'Scatter Dataset',
+          label: 'Initial dataset',
           data: dataPoints,
           backgroundColor: 'red',
           order: Number.MAX_SAFE_INTEGER
@@ -109,7 +109,7 @@
       centroidsGroups.push(centroidsPoints);
 
       let newDataSet = {
-        label: 'Nova era',
+        label: 'Primeiros centróides',
         data: centroidsGroups[0],
         backgroundColor: 'blue',
         order: 1
@@ -119,27 +119,26 @@
       chart.update();
 
       let compareTwoArrays = (a1, a2) => {
-        console.log('a1', a1);
-        console.log('a2', a2);
-        return (
-            a1.length === a2.length &&
+        let result = a1.length === a2.length &&
             a1.every((e1) =>
                 a2.some((e2) =>
                     Object.keys(e1).every((key) => e1[key] === e2[key])
                 )
-            )
-        );
+            );
+        return result;
       };
 
       let compareMatrix = (m1, m2) => {
         if(m1.length === m2.length) {
+          let result = true;
+
           m1.forEach((a1, i) => {
             if(!compareTwoArrays(a1, m2[i])) {
-              return false;
+              result = false;
             }
           });
 
-          return true;
+          return result;
         }
       };
 
@@ -147,7 +146,6 @@
 
       while(!endKMeans) {
         currentCentroidsPointsGroups = [];
-        console.log('centroidsPoints', centroidsPoints);
 
         // Calcula a distância geométrica
         for(let i = 0; i < centroidsAmount; i++) {
@@ -167,9 +165,6 @@
           currentCentroidsPointsGroups[group[0].centroid].push(group[0].point);
         });
 
-        console.log("centroidsPointsGroups", centroidsPointsGroups);
-        console.log("currentCentroidsPointsGroups", currentCentroidsPointsGroups);
-
         // Se não houve mudança no conjunto dos centróides
         if(!compareMatrix(centroidsPointsGroups, currentCentroidsPointsGroups)) {
           const centroidGroup = [];
@@ -184,16 +179,6 @@
 
           centroidsGroups.push(centroidGroup);
 
-          let dataSet2 = {
-            label: 'Nova era 2',
-            data: centroidsGroups[1],
-            backgroundColor: 'green',
-            order: 0
-          };
-
-          chart.data.datasets.push(dataSet2);
-          chart.update();
-
           centroidsPointsGroups = structuredClone(currentCentroidsPointsGroups);
           centroidsPoints = centroidGroup;
         } 
@@ -201,6 +186,18 @@
           endKMeans = true;
         }
       }
+
+      console.log(centroidsGroups);
+
+      let finalDataSet = {
+        label: 'Centróides finais',
+        data: centroidsGroups[centroidsGroups.length - 1],
+        backgroundColor: 'green',
+        order: 0
+      };
+
+      chart.data.datasets.push(finalDataSet);
+      chart.update();
     });
   }
 </script>
