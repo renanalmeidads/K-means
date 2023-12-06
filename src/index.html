@@ -136,6 +136,7 @@
 
       while(!endKMeans) {
         currentCentroidsPointsGroups = [];
+        distancesArray = [];
 
         // Calcula a distância geométrica
         for(let i = 0; i < centroidsAmount; i++) {
@@ -150,7 +151,7 @@
         dataPoints.forEach((p) => {
           const group = distancesArray.filter((d) => d.point_index === p.index);
 
-          group.sort((a,b) => comparePointsDistances(a, b)); 
+          group.sort((a,b) => comparePointsDistances(a, b));
 
           currentCentroidsPointsGroups[group[0].centroid].push(group[0].point);
         });
